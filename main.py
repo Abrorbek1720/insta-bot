@@ -3,10 +3,9 @@ import subprocess
 import os
 import shutil
 
-# Railway Variables dan token olinadi
 TOKEN = os.getenv("BOT_TOKEN")
 if not TOKEN:
-    raise ValueError("BOT_TOKEN topilmadi. Railway Variables ni tekshiring")
+    raise ValueError("BOT_TOKEN topilmadi")
 
 bot = telebot.TeleBot(TOKEN)
 DOWNLOAD_DIR = "downloads"
@@ -17,7 +16,7 @@ def start(message):
     bot.send_message(
         message.chat.id,
         "👋 Instagram link yuboring\n"
-        "📥 Post / Reels / Rasm / Carousel yuklab beraman"
+        "📥 Rasm / Video / Reels / Carousel yuklab beraman"
     )
 
 
@@ -26,52 +25,48 @@ def download_instagram(message):
     url = message.text.strip()
     chat_id = message.chat.id
 
-    bot.send_message(chat_id, "⏳ Yuklanmoqda, iltimos kuting...")
+    bot.send_message(chat_id, "⏳ Yuklanmoqda...")
 
-    # eski fayllarni tozalash
     if os.path.exists(DOWNLOAD_DIR):
         shutil.rmtree(DOWNLOAD_DIR)
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
     try:
-        # Video bo‘lsa video, rasm bo‘lsa rasm yuklaydi
         subprocess.run(
             [
                 "yt-dlp",
+                "--no-warnings",
+                "--no-playlist",
+                "--force-overwrites",
                 "-o",
-                f"{DOWNLOAD_DIR}/%(title)s.%(ext)s",
+                f"{DOWNLOAD_DIR}/%(id)s.%(ext)s",
                 url
             ],
-            check=True
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
         )
 
-        files = sorted(os.listdir(DOWNLOAD_DIR))
+        files = os.listdir(DOWNLOAD_DIR)
 
         if not files:
-            bot.send_message(chat_id, "❌ Media topilmadi")
+            bot.send_message(chat_id, "❌ Media topilmadi (post yopiq yoki rasmli post bo‘lishi mumkin)")
             return
 
-        for file in files:
+        for file in sorted(files):
             path = os.path.join(DOWNLOAD_DIR, file)
 
-            try:
-                # Video formatlar
-                if file.lower().endswith((".mp4", ".mov", ".webm")):
-                    with open(path, "rb") as f:
-                        bot.send_video(chat_id, f)
+            if file.lower().endswith((".mp4", ".mov", ".webm")):
+                with open(path, "rb") as f:
+                    bot.send_video(chat_id, f)
 
-                # Rasm formatlar (ENG MUHIM QISM)
-                elif file.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
-                    with open(path, "rb") as f:
-                        bot.send_photo(chat_id, f)
+            elif file.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+                with open(path, "rb") as f:
+                    bot.send_photo(chat_id, f)
 
-                # Boshqa fayllar (zaxira)
-                else:
-                    with open(path, "rb") as f:
-                        bot.send_document(chat_id, f)
-
-            except Exception:
-                bot.send_message(chat_id, f"⚠️ Yuborib bo‘lmadi: {file}")
+            else:
+                with open(path, "rb") as f:
+                    bot.send_document(chat_id, f)
 
             os.remove(path)
 
@@ -81,7 +76,7 @@ def download_instagram(message):
         bot.send_message(
             chat_id,
             "❌ Yuklab bo‘lmadi.\n"
-            "👉 Link ochiq (public) ekanini tekshiring"
+            "👉 Post public ekanini tekshiring"
         )
     except Exception as e:
         bot.send_message(chat_id, f"❌ Xatolik: {e}")
