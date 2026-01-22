@@ -1,7 +1,7 @@
 import telebot
 import subprocess
 import os
-TOKEN = os.getenv("6550195732:AAH2RaNVsdkSpjmSyiNPGjuhH6hcAYmh-S0")
+TOKEN = os.getenv("BOT_TOKEN")
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -34,4 +34,5 @@ def download_instagram(message):
         bot.send_message(chat_id, "❌ Xatolik yuz berdi")
 
 bot.polling(none_stop=True)
+
 
